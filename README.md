@@ -25,7 +25,7 @@ Standard approaches to compute spectral functions require access to the full spe
 Instead, we implement a probe-based spectroscopy method:
 
 - A non-interacting probe wire is coupled to the system
-- A bias voltage ( V_b = \omega ) selects energy
+- A bias voltage $V_b = \omega $ selects energy
 - Momentum conservation constrains tunneling processes
 
 The energy spectrum is extracted from the momentum distribution in the probe at each time step.
@@ -62,6 +62,6 @@ Institutional: silveira.luc@northeastern.edu
 
 Northeastern University — Physics Department
 
-#License
+# License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
