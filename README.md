@@ -5,10 +5,23 @@
 ![Hubbard model](https://img.shields.io/badge/Physics-Hubbard%20Model-purple)
 ![Status](https://img.shields.io/badge/Status-Research-lightgrey)
 
+Numerical and theoretical study of time-resolved Floquet spectroscopy in driven quantum systems, with a focus on extracting instantenous energy spectrum and observables in out-of-equilibrium regime.
 
 ## Overview
 
+This project investigates how periodic driving modifies the properties of quantum systems, combining:
+
+- Floquet theory (periodically driven systems)
+- Time-resolved spectroscopy (extended tunneling probe-based measurements)
+
+The main goal is to connect:
+
+- Microscopic time-dependent Hamiltonians
+- Effective (Floquet) descriptions
+
 ## Project Objectives
+
+
 
 ## Current Capabilities
 
