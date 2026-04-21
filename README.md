@@ -5,7 +5,7 @@
 ![Hubbard model](https://img.shields.io/badge/Physics-Hubbard%20Model-purple)
 ![Status](https://img.shields.io/badge/Status-Research-lightgrey)
 
-Numerical and theoretical study of time-resolved Floquet spectroscopy in driven quantum systems, with a focus on extracting instantenous energy spectrum and observables in out-of-equilibrium regime.
+Numerical and theoretical study of time-resolved Floquet spectroscopy in driven quantum systems, with a focus on extracting instantenous energy spectrum and observables in the out-of-equilibrium regime.
 
 ## Overview
 
