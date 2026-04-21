@@ -1,5 +1,11 @@
 # Time-Resolved Floquet Spectroscopy
 
+![Python](https://img.shields.io/badge/Python-Scientific%20Computing-blue)
+![ED / DMRG](https://img.shields.io/badge/Method-ED%20/%20DMRG-brightgreen)
+![Hubbard model](https://img.shields.io/badge/Physics-Hubbard%20Model-purple)
+![Status](https://img.shields.io/badge/Status-Research-lightgrey)
+
+
 Probing transient and sub-cycle dynamics in driven quantum systems
 
 ## Overview
@@ -58,6 +64,7 @@ Time-Dependent DMRG (tDMRG)
 Lucas Queiroz Silveira
 
 Email: silveira.lucasq@gmail.com
+
 Institutional: silveira.luc@northeastern.edu
 
 Northeastern University — Physics Department
