@@ -10,8 +10,6 @@ import numpy as np
 
 from joblib import Parallel, delayed, dump
 
-from scipy.integrate import quad
-
 from tenpy.networks.mps import MPS
 from tenpy.models.model import CouplingMPOModel
 from tenpy.networks import site
@@ -34,11 +32,13 @@ class time_dependent_Hubbard(CouplingMPOModel):
         return [fermion_sample, fermion_probe] # Return list of site objects
 
     def init_terms(self, model_params):
+    
+        L = model_params.get('L', 10) # Length of the sample
 
         # Extract parameters
         J = model_params.get('J', 1.0)
-        U = model_params.get('U', 10.0)
-        V = model_params.get('V', 5.0)
+        U = model_params.get('U', 0.0)
+        V = model_params.get('V', 0.0)
 
         g = model_params.get('g', 0.2)
         omega = model_params.get('omega', 1.0)
@@ -51,9 +51,18 @@ class time_dependent_Hubbard(CouplingMPOModel):
 
         # Onsite interaction in the sample
         self.add_onsite(U, 0, 'NuNd')
+        
+        mu_U = -0.5 * U
+        self.add_onsite(mu_U, 0, 'Nu')
+        self.add_onsite(mu_U, 0, 'Nd')
 
-        # Neighbor interaction within the sample
+        # Nearest-neighbor interaction in the sample
         self.add_coupling(V, 0, 'Ntot', 0, 'Ntot', [1], plus_hc=False)
+
+        mu_V = np.full(L, -2.0 * V)
+        mu_V[0] += V
+        mu_V[-1] += V
+        self.add_onsite(mu_V, 0, 'Ntot')
 
         # Chemical potential on the sample
         self.add_onsite(mu, 0, 'Ntot')
@@ -69,17 +78,6 @@ class time_dependent_Hubbard(CouplingMPOModel):
 # Functions #
 #############
 
-def E_pulse(t, E0, Omega, sigma, t0):
-    # Electric field of the pulse
-    return E0 * np.exp(-((t - t0)**2) / (2 * sigma**2)) * np.sin(Omega * t)
-
-def A_pulse(E0, Omega, sigma, t0, t):
-    # Vector potential from the electric field pulse
-    A = np.zeros_like(t)
-    for i, ti in enumerate(t):
-        A[i], A_error = quad(E_pulse, -np.inf, ti, args=(E0, Omega, sigma, t0))
-    return -A, A_error
-
 def correlation_up(psi, model):
 
     probe_sites = model.lat.mps_idx_fix_u(1) # Probe sites
@@ -94,12 +92,19 @@ def correlation_down(psi, model):
     
     return C_p
 
-def dmrg_ground_state(psi_init, model, dmrg_params):
+def DMRG(psi_init, model, dmrg_params):
 
     dmrg_engine = TwoSiteDMRGEngine(psi_init, model, dmrg_params) # Initialize DMRG engine
     E0, psi_gs = dmrg_engine.run() # Run DMRG to find ground state
 
     return E0, psi_gs
+
+def TDVP(psi_init, model, tdvp_params):
+
+    tdvp_engine = tdvp.TwoSiteTDVPEngine(psi_init, model, tdvp_params)
+    tdvp_engine.run()
+
+    return tdvp_engine.psi, tdvp_engine.trunc_err.eps
 
 ##################################################################################################
 # Main function that runs TDVP for a given omega and returns the correlation functions over time #
@@ -117,6 +122,9 @@ def simulation(times, omega_val, A, Probe, psi_init, model_parameter, tdvp_param
 
     psi = psi_init.copy()
 
+    prev = 0.0
+    error = 0.0
+
     for ti, _ in enumerate(times):
 
         model_params_copy['J'] = J0 * np.exp(1j * A[ti])
@@ -127,15 +135,13 @@ def simulation(times, omega_val, A, Probe, psi_init, model_parameter, tdvp_param
     
         model = time_dependent_Hubbard(model_params_copy)
     
-        eng_tdvp = tdvp.TwoSiteTDVPEngine(psi, model, tdvp_params)
-    
-        eng_tdvp.run()
-
-        psi = eng_tdvp.psi
+        psi, err = TDVP(psi, model, tdvp_params)
 
         C_t_ij[ti, :, :] = correlation_down(psi, model) + correlation_up(psi, model)
+
+        error = max(prev, err)
     
-    return C_t_ij
+    return C_t_ij, error, psi.chi
 
 ##############################
 # Extracting job information # 
@@ -149,21 +155,13 @@ print(f"Task {task_id} out of {n_jobs} total tasks")
 omega_dir = Path(sys.argv[3])
 corr_dir = Path(sys.argv[4])
 
-########
-# Time #
-########
-
-N_t = 200
-times = np.linspace(0.0, 10.0, N_t)
-dt = times[1]-times[0]
-
 #########################################################################
 # Processing Energy scan array to submit different simultaneously tasks #
 #########################################################################
 
-N_omega = 100 
+N_omega = 200 
 
-omega = np.linspace(-10.0, 10.0, N_omega) 
+omega = np.linspace(-20.0, 20.0, N_omega) 
 
 omega_slices = np.array_split(omega, n_jobs)
 
@@ -171,6 +169,14 @@ omega_scan = omega_slices[task_id]
 
 filename_w = f"omega_{task_id}.npy"
 np.save(omega_dir / filename_w, omega_scan)
+
+########
+# Time #
+########
+
+N_t = 400
+times = np.linspace(0.0, 15.0, N_t)
+dt = times[1]-times[0]
 
 ###################
 # Model Paramaters#
@@ -181,7 +187,7 @@ L = int(sys.argv[5])
 J0 = 1.0
 U0 = float(sys.argv[6])
 V0 = float(sys.argv[7])
-mu = - U0 
+mu = 0.0
 
 ########################
 # init Drive and Pulse #
@@ -190,9 +196,9 @@ mu = - U0
 A0 = float(sys.argv[8])
 omega_drive = float(sys.argv[9])
 
-P0 = 0.3
-t_probe = float(sys.argv[10])
-sigma = 2.0
+P0 = 0.2
+t_probe = 7.5
+sigma = 4.0
 
 A = A0 * np.sin(omega_drive * times)
 
@@ -215,7 +221,7 @@ tdvp_params = {
     'N_steps': 1,
     'dt': dt,
     'trunc_params': {
-        'chi_max': 100, 
+        'chi_max': 300, 
         'svd_min': 1.e-6,
     },
 }
@@ -224,7 +230,7 @@ tdvp_params = {
 # Bookkeeping: print statements #
 #################################
 
-print("Model parameters: J0={}, U0={}, V0={}".format(J0, U0, V0))
+print("Model parameters: J0={}, U0={}".format(J0, U0))
 print()
 print("Drive and Probe: A0={}, omega={}, P0={}, sigma={}".format(A0, omega_drive, P0, sigma))
 print()
@@ -237,16 +243,11 @@ print()
 
 mu_probe = 10.0**4
 
-s_filling = 1.0 
-p_filling = 0.0
-
-Ns = int(s_filling * L / 2)
-Np = int(p_filling * L / 2)
-
 model_parameter = {
     'L': L,
     'J': J0,
     'g': 0.0,
+    'U': U0,
     'V': V0,
     'omega': mu_probe,
     'mu':mu,
@@ -257,13 +258,31 @@ model_init = time_dependent_Hubbard(model_parameter)
 
 lattice = model_init.lat
 
-product_state = [
-    (f_s, f_p) for f_s, f_p in zip(['up', 'down'] * Ns + ['empty'] * (L - Ns), ['full'] * Np + ['empty'] * (L - 2 * Np))
-    ]
+s_filling = float(sys.argv[10])
+
+if s_filling <= 1.0:
+    N_spins = int(s_filling * L)
+    N_up = N_spins // 2
+    N_down = N_spins - N_up
+
+    state = ['up'] * N_up + ['down'] * N_down + ['empty'] * (L - N_spins)
+
+elif s_filling > 1.0 and s_filling < 2.0:
+    N_holes = int((2.0 - s_filling) * L)
+    N_up = (L - N_holes) // 2
+    N_down = L - N_holes - N_up
+    state = ['up'] * N_up + ['down'] * N_down + ['full'] * N_holes
+
+elif s_filling == 2.0:
+    state = ['full'] * L
+
+np.random.shuffle(state)
+
+product_state = [(s, 'empty') for s in state]
 
 psi_init = MPS.from_lat_product_state(lattice, product_state)
 
-E0, psi_gs = dmrg_ground_state(psi_init, model_init, dmrg_params)
+E0, psi_gs = DMRG(psi_init, model_init, dmrg_params)
 
 sample_occupation = psi_gs.expectation_value('Ntot', sites=lattice.mps_idx_fix_u(0)) 
 probe_occupation = psi_gs.expectation_value('Ntot', sites=lattice.mps_idx_fix_u(1))
@@ -272,7 +291,13 @@ print(r'Sample occupation before time-evolution: {:.5}'.format(np.mean(sample_oc
 print(r'Probe occupation before time-evolution: {:.5}'.format(np.mean(probe_occupation)))
 print()
 
-C_l = Parallel(n_jobs=-1, verbose=10)(delayed(simulation)(times, w_val, A, Probe, psi_gs, model_parameter, tdvp_params) for w_val in omega_scan)
+results = Parallel(n_jobs=-1, verbose=10)(delayed(simulation)(times, w_val, A, Probe, psi_gs, model_parameter, tdvp_params) for w_val in omega_scan)
+
+C_l, error, bond = zip(*results)
+
+print("\n" + "="*100)
+print("\n Final bond dimension: \n {}".format(bond[0]))
+print("\n Maximum truncation error during TDVP: \n {}".format(np.max(error)))
 
 print()
 print("Simulation completed! Saving array ...")
@@ -281,59 +306,6 @@ C_l = np.array(C_l)
 
 filename = f"correlation-low_{task_id}.npy"
 dump(C_l, corr_dir / filename)
-
-print()
-print("===================================================================================")
-print()
-print("-> Scanning upper band...")
-print()
-
-mu_probe = -10.0**4
-
-s_filling = 1.0 
-p_filling = 1.0
-
-Ns = int(s_filling * L / 2)
-Np = int(p_filling * L / 2)
-
-model_parameter = {
-    'L': L,
-    'J': J0,
-    'g': 0.0,
-    'V': V0,
-    'omega': mu_probe,
-    'mu':mu,
-    'bc_MPS': 'finite',
-    }
-
-model_init = time_dependent_Hubbard(model_parameter)
-
-lattice = model_init.lat
-
-product_state = [
-    (f_s, f_p) for f_s, f_p in zip(['up', 'down'] * Ns + ['empty'] * (L - Ns), ['full'] * Np + ['empty'] * (L - 2 * Np))
-    ]
-
-psi_init = MPS.from_lat_product_state(lattice, product_state)
-
-E0, psi_gs = dmrg_ground_state(psi_init, model_init, dmrg_params)
-
-sample_occupation = psi_gs.expectation_value('Ntot', sites=lattice.mps_idx_fix_u(0)) 
-probe_occupation = psi_gs.expectation_value('Ntot', sites=lattice.mps_idx_fix_u(1))
-
-print(r'Sample occupation before time-evolution: {:.5}'.format(np.mean(sample_occupation)))
-print(r'Probe occupation before time-evolution: {:.5}'.format(np.mean(probe_occupation)))
-print()
-
-C_u = Parallel(n_jobs=-1, verbose=10)(delayed(simulation)(times, w_val, A, Probe, psi_gs, model_parameter, tdvp_params) for w_val in omega_scan)
-
-print()
-print("Simulation completed! Saving array...")
-
-C_u = np.array(C_u)
-
-filename = f"correlation-up_{task_id}.npy"
-dump(C_u, corr_dir / filename)
 
 print("Job finished!")
 
