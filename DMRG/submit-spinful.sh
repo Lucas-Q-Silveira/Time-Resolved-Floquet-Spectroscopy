@@ -18,6 +18,7 @@ job_id=$SLURM_ARRAY_JOB_ID
 
 L=32
 U0=5.0
+V0=0.0
 filling=0.5
 n_jobs=10
 
@@ -58,4 +59,4 @@ correlation_dir="${results_dir}/correlations"
 mkdir -p $correlation_dir
 
 conda run -p /home/l.silveira/project_venv python3 "$file" \
-    "$id" "$n_jobs" "$omega_dir" "$correlation_dir" "$L" "$U0" "$A0" "$omega" "$filling"
+    "$id" "$n_jobs" "$omega_dir" "$correlation_dir" "$L" "$U0" "$V0" "$A0" "$omega" "$filling"
