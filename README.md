@@ -13,7 +13,7 @@ Numerical implementation of a **time- and momentum-resolved tunneling spectrosco
 
 ![In-gap band formation under resonant driving](in-gap.gif)
 
-*Real-time evolution of the measured spectrum $n(\omega, k; t)$ for the driven spinless $t$–$V$ chain, showing the build-up of an in-gap band at resonance.*
+*Real-time evolution of the measured spectrum $ n(\omega, k; t) $ for the driven spinless $ t $–$ V $ chain, showing the build-up of an in-gap band at resonance.*
 
 ---
 
