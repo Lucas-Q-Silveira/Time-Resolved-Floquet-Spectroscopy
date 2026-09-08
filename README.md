@@ -73,7 +73,7 @@ Scanning $V_g$ maps out the energy axis; shifting $t_{\text{probe}}$ maps out th
 | `In-Gap formation.ipynb` | Ionic chain, $H = -J\sum_j (e^{-iA(t)} c_j^\dagger c_{j+1} + \text{h.c.}) + \Delta \sum_j (-1)^j n_j$ | Long-lived excitations across the ionic gap; instantaneous bands $\epsilon^\pm(k,t) = \pm\sqrt{\Delta^2 + [2J\cos(k - A(t))]^2}$ |
 | `Dynamical Localization.ipynb` | Tight-binding chain, hyperbolic ramp $A(t) = \tfrac{A_0}{2}[1 + \tanh((t-t_0)/\delta)]\sin(\Omega t)$ | Progressive flattening of the band into a dynamically localized steady state |
 | `spinful.py` | Hubbard model, $U\sum_j (n_{j\uparrow} - \tfrac12)(n_{j\downarrow} - \tfrac12)$ | Spin–charge separation under driving; resonant $m\Omega = U\Delta_U$ transfer between Hubbard bands; driven spin exchange $J_S = 4J^2 \sum_m \lvert \mathcal{J}_m(A_0)\rvert^2 / (U - m\Omega)$ |
-| `spinless.py` | $t$–$V$ chain, $V\sum_j (n_j - \tfrac12)(n_{j+1} - \tfrac12)$ | CDW order at half filling; **in-gap band** from resonant domain-wall creation, dispersing as $\epsilon_{\text{DW}}(k) = -2J\mathcal{J}_0(A_0)\cos k$ |
+| `spinless.py` | t–V chain, $V\sum_j (n_j - \tfrac12)(n_{j+1} - \tfrac12)$ | CDW order at half filling; **in-gap band** from resonant domain-wall creation, dispersing as $\epsilon_{\text{DW}}(k) = -2J\mathcal{J}_0(A_0)\cos k$ |
 
 ## Usage
 
