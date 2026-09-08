@@ -37,7 +37,7 @@ H_{\text{tunnel}} = g(t) \sum_{i=1}^{L} \left( c_i^\dagger d_i + \text{h.c.} \ri
 
 The tunneling amplitude follows a **Gaussian envelope**
 
-$$g(t) = g_0 \exp\!\left[-\frac{(t - t_{\text{probe}})^2}{2\sigma^2}\right],$$
+$$g(t) = g_0 \exp\left[-\frac{(t - t_{\text{probe}})^2}{2\sigma^2}\right],$$
 
 so tunneling events are localized in time around $t_{\text{probe}}$ and the spectrum is obtained *while the drive remains active*. Energy and momentum conservation constrain which processes can occur, and the spectrum is reconstructed from the probe occupation
 
