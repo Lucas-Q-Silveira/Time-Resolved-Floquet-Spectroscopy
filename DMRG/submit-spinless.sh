@@ -11,7 +11,7 @@
 
 export OMP_NUM_THREADS=1
 
-file=spinless.py
+file=spinless.py 
 
 task_id=$SLURM_ARRAY_TASK_ID
 job_id=$SLURM_ARRAY_JOB_ID
